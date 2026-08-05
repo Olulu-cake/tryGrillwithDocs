@@ -39,15 +39,21 @@ jobs:
       run: npx next build || npm run build
       working-directory: ./storefront
 
-    - name: Run Playwright tests
+    - name: Start Backend API Server
       run: |
         npx ts-node src/app.ts &
         npx wait-on http://localhost:8080
-        npx playwright test
+      working-directory: ./
+      env:
+        DATABASE_URL: "file:./dev.db"
+        PORT: 8080
+
+    - name: Run Playwright tests
+      run: npx playwright test
       working-directory: ./storefront
       env:
         CI: true
-        PORT: 8080
+        BASE_URL: http://localhost:8080
 
     - name: Upload Playwright Report on Failure
       uses: actions/upload-artifact@v4
