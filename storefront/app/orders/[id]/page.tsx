@@ -95,7 +95,7 @@ export default function OrderDetailPage() {
               <span className="text-xs text-gray-500 block">訂購人</span>
               <span className="text-gray-800" data-testid="order-name">
                 {(() => {
-                  const displayName = order?.name || order?.customerName || order?.buyerName || 'Test User';
+                  const displayName = order?.name || (order as any)?.customerName || (order as any)?.buyerName || 'Test User';
                   return displayName;
                 })()}
               </span>
