@@ -124,7 +124,7 @@ export default function CartPage() {
           {cart.items.map((item) => {
             const isMaxStock = item.quantity >= item.stock;
             return (
-              <div key={item.productId} className="flex border-b py-4 gap-4 items-center">
+              <div key={item.productId} className="flex border-b py-4 gap-4 items-center" data-testid="cart-item">
                 {item.imageUrl && (
                   <img src={item.imageUrl} alt={item.title} className="w-20 h-20 object-cover" />
                 )}
@@ -144,10 +144,11 @@ export default function CartPage() {
                     className="px-2 border rounded disabled:opacity-50" 
                     disabled={isMaxStock}
                     onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
+                    data-testid="increase-qty-btn"
                   >+</button>
                 </div>
                 <p className="font-semibold">${Number(item.subtotal || 0).toFixed(2)}</p>
-                <button className="text-red-500" onClick={() => handleRemoveItem(item.productId)}>刪除</button>
+                <button className="text-red-500" onClick={() => handleRemoveItem(item.productId)} data-testid="remove-item-btn">刪除</button>
               </div>
             );
           })}
@@ -161,7 +162,7 @@ export default function CartPage() {
           </div>
           <div className="flex justify-between mb-2">
             <span>總額</span>
-            <span>${Number(cart.totalAmount || 0).toFixed(2)}</span>
+            <span data-testid="cart-total-price">${Number(cart.totalAmount || 0).toFixed(2)}</span>
           </div>
           <button
             className="w-full bg-blue-600 text-white py-3 rounded font-bold"

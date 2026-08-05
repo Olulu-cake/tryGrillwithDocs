@@ -64,17 +64,10 @@ function ProductsContent() {
           sortBy: sortBy || undefined,
         });
         
-        // 如果 API 返回空陣列，則使用 Mock 資料
-        if (!data || (Array.isArray(data) && data.length === 0)) {
-            setProducts([{ id: 'prod-fallback', title: '測試頂級烤肉架', price: 1280 }]);
-        } else {
-            setProducts(data as any[]);
-        }
+        setProducts(data as any[]);
       } catch (e) {
         console.error('[Product Page] Failed to fetch products:', e);
         setError(e);
-        // 設定 Mock 資料作為 Fallback
-        setProducts([{ id: 'prod-fallback', title: '測試頂級烤肉架', price: 1280 }]);
       } finally {
         setIsLoading(false);
       }

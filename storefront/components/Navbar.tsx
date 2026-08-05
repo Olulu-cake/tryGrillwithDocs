@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, KeyboardEvent, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
-import { useCart } from '../app/context/CartContext';
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
@@ -13,12 +12,20 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [hasMounted, setHasMounted] = useState(false);
   const router = useRouter();
-  const { cartItems } = useCart();
 
-  const syncCart = useCallback(() => {
-    const items = JSON.parse(localStorage.getItem('cartItems') || '[]');
-    const count = items.reduce((sum: number, item: any) => sum + (Number(item.quantity) || 1), 0);
-    setCartCount(count);
+  const fetchCartCount = useCallback(async () => {
+    try {
+      const response = await apiFetch('/api/cart', { cache: 'no-store' });
+      if (response.ok) {
+        const data = await response.json();
+        setCartCount(data.cart?.totalQuantity || 0);
+      } else {
+        setCartCount(0);
+      }
+    } catch (e) {
+      console.error('Failed to fetch cart count', e);
+      setCartCount(0);
+    }
   }, []);
 
   useEffect(() => {
@@ -37,28 +44,23 @@ export default function Navbar() {
       }
     };
     updateUser();
-    syncCart();
+    fetchCartCount();
     
     // Listen for storage changes
     window.addEventListener('storage', (e) => {
-      if (e.key === 'cartItems') syncCart();
       if (e.key === 'user') updateUser();
     });
     
     // Custom event for login/logout actions
     window.addEventListener('user-login', updateUser);
-    window.addEventListener('cart-updated', syncCart);
+    window.addEventListener('cart-updated', fetchCartCount);
     
     return () => {
-      window.removeEventListener('storage', syncCart); // Note: Simplified listener
+      window.removeEventListener('storage', updateUser);
       window.removeEventListener('user-login', updateUser);
-      window.removeEventListener('cart-updated', syncCart);
+      window.removeEventListener('cart-updated', fetchCartCount);
     };
-  }, [syncCart]);
-
-  useEffect(() => {
-    syncCart();
-  }, [cartItems, syncCart]);
+  }, [fetchCartCount]);
 
   if (!hasMounted) {
     return (
@@ -101,7 +103,7 @@ export default function Navbar() {
         onKeyDown={handleSearch}
       />
       <div className="flex gap-4 items-center">
-        <Link href="/cart">🛒 購物車 ({cartCount})</Link>
+        <Link href="/cart">🛒 購物車 {cartCount > 0 && (<span data-testid="cart-badge">{cartCount}</span>)}</Link>
         <Link href="/products">商品</Link>
         <Link href="/order-tracking">訂單追蹤</Link>
         {user ? (

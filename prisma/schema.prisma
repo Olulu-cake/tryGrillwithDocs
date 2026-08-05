@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model Coupon {
   id             String    @id @default(uuid())
   code           String    @unique
@@ -26,9 +32,9 @@ model Coupon {
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
-  name         String?   // Added name field
+  name         String?   
   password     String?
-  role         String    @default("customer")
+  role         String    @default("CUSTOMER") // ADMIN, CUSTOMER
   isRegistered Boolean   @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -56,13 +62,16 @@ model Address {
 // 2. --- Inventory Module (產品與庫存模組) ---
 // ==========================================
 model Product {
-  id          String   @id @default(uuid())
-  sku         String   @unique
+  id          String        @id @default(uuid())
+  sku         String        @unique
   title       String
   description String?
-  price       Decimal  @db.Decimal(10, 2) // 🛡️ 還原為高精度 Decimal 金流安全欄位
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  price       Decimal       @db.Decimal(10, 2)
+  status      ProductStatus @default(DRAFT)
+  images      String[]
+  categoryId  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   
   inventory   InventoryItem?
 }
@@ -93,12 +102,12 @@ model StockReservation {
 model Order {
   id                String      @id @default(uuid())
   userId            String?     
-  status            String      @default("PENDING") // PENDING, PAID, SHIPPED, COMPLETED, CANCELLED
+  status            String      @default("PENDING") 
   paymentMethod     String?     @default("CREDIT_CARD")
   paymentStatus     String      
   fulfillmentStatus String      
-  totalAmount       Decimal     @db.Decimal(10, 2) // 🛡️ 金流安全欄位
-  shippingAmount    Decimal     @db.Decimal(10, 2) // 🛡️ 金流安全欄位
+  totalAmount       Decimal     @db.Decimal(10, 2) 
+  shippingAmount    Decimal     @db.Decimal(10, 2) 
   
   // Buyer Details
   buyerName         String
@@ -139,7 +148,7 @@ model PaymentTransaction {
   provider          String   
   providerId        String   @unique 
   status            String   
-  amount            Decimal  @db.Decimal(10, 2) // 🛡️ 金流安全欄位
+  amount            Decimal  @db.Decimal(10, 2) 
   idempotencyKey    String   @unique 
   createdAt         DateTime @default(now())
   
@@ -182,7 +191,7 @@ model Shipment {
 model ShippingRateVersion {
   id          String   @id @default(uuid())
   version     Int      @default(1)
-  baseRate    Decimal  @db.Decimal(10, 2) // 🛡️ 金流安全欄位
+  baseRate    Decimal  @db.Decimal(10, 2) 
   weightTier  Json     
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())

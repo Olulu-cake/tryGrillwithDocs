@@ -8,7 +8,7 @@ export class OrderService {
 
   async createOrder(orderData: { buyer: BuyerInfo, receiver: ReceiverInfo, userId?: string }, fallbackItems?: any[], fallbackTotal?: number) {
     const { buyer, receiver, userId } = orderData;
-    const cartId = 'default-cart';
+    const cartId = 'cart-123';
     
     let items: any[] = [];
     try {
@@ -96,7 +96,11 @@ export class OrderService {
 
       this.orders.set(orderId, newOrder);
       await cartService.clearCart(cartId);
-      await cartService.clearCart('cart-123');
+      
+      // Clear stock reservations in the database
+      await prisma.stockReservation.deleteMany({
+        where: { cartId },
+      });
       
       return newOrder;
     } catch (err: any) {

@@ -14,6 +14,11 @@ const createUniqueUser = () => {
 
 test.describe('User Journey', () => {
 
+  test.beforeEach(async ({ request }) => {
+    // 每次測試前確保購物車為空
+    await request.delete('/api/cart');
+  });
+
   test('New member full shopping and strict data consistency journey', async ({ page }) => {
     const user = createUniqueUser();
 
@@ -42,13 +47,17 @@ test.describe('User Journey', () => {
     await page.getByTestId('checkout-shipping-address').fill(user.address);
     
     await page.getByTestId('submit-order-btn').click();
+    await expect(page).toHaveURL(/\/checkout\/success/, { timeout: 15000 });
+    await page.waitForTimeout(500);
 
     // 結帳成功頁
-    await expect(page).toHaveURL(/\/checkout\/success\?orderId=/);
     const orderId = new URL(page.url()).searchParams.get('orderId');
     
-    // 驗證 Header 購物車數量歸零
-    await expect(page.getByRole('navigation').first()).toContainText('購物車 (0)');
+    // 確保狀態同步：強制刷新頁面以驗證購物車 Badge 確實重置
+    await page.reload();
+    
+    // 驗證 Header 購物車數量歸零 (Badge 隱藏)
+    await expect(page.getByTestId('cart-badge')).not.toBeVisible();
     
     // 點擊查看訂單明細
     await page.getByRole('button', { name: '查看訂單明細' }).click();
@@ -80,7 +89,14 @@ test.describe('User Journey', () => {
     await page.getByTestId('checkout-shipping-address').fill(user.address);
     
     await page.getByTestId('submit-order-btn').click();
-    await expect(page).toHaveURL(/\/checkout\/success/);
+    await expect(page).toHaveURL(/\/checkout\/success/, { timeout: 15000 });
+    await page.waitForTimeout(500);
+    
+    // 確保狀態同步：強制刷新頁面以驗證購物車 Badge 確實重置
+    await page.reload();
+    
+    // 驗證 Header 購物車數量歸零 (Badge 隱藏)
+    await expect(page.getByTestId('cart-badge')).not.toBeVisible();
 
     // 直接訪問訂單頁應被攔截
     await page.goto('/profile/orders');

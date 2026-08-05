@@ -56,7 +56,7 @@ export async function initiateCheckout(userId: string, guestCartId: string, user
     };
     
     // Create order using Prisma directly to ensure data integrity
-    return await tx.order.create({
+    const order = await tx.order.create({
       data: {
         userId,
         status: 'PENDING',
@@ -77,5 +77,10 @@ export async function initiateCheckout(userId: string, guestCartId: string, user
         }
       }
     });
+
+    // 4. Clear cart after successful order creation
+    await cartService.clearCart(userCartId);
+
+    return order;
   });
 }

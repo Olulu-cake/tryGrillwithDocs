@@ -12,7 +12,13 @@ export const productRouter = router({
       sortBy: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      return await catalogService.getProducts(input);
+      // 確保僅查詢已發布且有庫存的商品
+      const modifiedInput = {
+        ...input,
+        status: 'PUBLISHED',
+        minStock: 1,
+      };
+      return await catalogService.getProducts(modifiedInput);
     }),
   getById: publicProcedure
     .input(z.string())
