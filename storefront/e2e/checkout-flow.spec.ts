@@ -23,7 +23,7 @@ test.describe('Checkout Flow - Final Resilient Suite', () => {
     const [response] = await Promise.all([
       // 監聽購物車/trpc API 請求
       page.waitForResponse(
-        r => (r.url().includes('/cart') || r.url().includes('/trpc')) && r.status() < 400,
+        (r: any) => (r.url().includes('/cart') || r.url().includes('/trpc')) && r.status() < 400,
         { timeout: 10000 }
       ),
       addBtn.click()
