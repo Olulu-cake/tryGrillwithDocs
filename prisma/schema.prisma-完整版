@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ==========================================
+// 1. --- Users Module ---
+// ==========================================
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  role         String    @default("customer") // "customer" | "admin"
+  isRegistered Boolean   @default(false) // false 代表訪客影子帳號 (Guest Shadow Account)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  addresses    Address[]
+}
+
+model Address {
+  id         String  @id @default(uuid())
+  userId     String // 模組內關聯 (User.id)
+  type       String // "shipping" | "billing"
+  fullName   String
+  phone      String
+  line1      String
+  line2      String?
+  city       String
+  state      String?
+  postalCode String
+  country    String
+  User       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ==========================================
+// 2. --- Inventory Module (產品與庫存) ---
+// ==========================================
+model Product {
+  id        String   @id @default(uuid())
+  sku       String   @unique
+  title     String
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventory InventoryItem?
+}
+
+model InventoryItem {
+  id             String  @id @default(uuid())
+  productId      String  @unique // 模組內關聯 (Product.id)
+  availableStock Int // 可銷售庫存
+  reservedStock  Int     @default(0) // 已被 BullMQ 鎖定 15 分鐘的預留庫存
+  Product        Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model StockReservation {
+  id             String   @id @default(uuid())
+  productId      String // 邏輯外鍵 (指向 Product.id，無 DB Relation，跨模組解耦)
+  cartId         String // 用於 BullMQ 釋放時的識別
+  quantity       Int
+  expirationTime DateTime // 15 分鐘過期時間
+  createdAt      DateTime @default(now())
+
+  @@index([productId])
+  @@index([cartId])
+}
+
+// ==========================================
+// 3. --- Orders Module (訂單) ---
+// ==========================================
+model Order {
+  id                String   @id @default(uuid())
+  userId            String // 邏輯外鍵 (指向 User.id，包含訪客影子帳號)
+  status            String // "PENDING" | "PAID" | "REFUNDED" | "CANCELLED"
+  paymentStatus     String // "UNPAID" | "PAID" | "PARTIALLY_REFUNDED" | "REFUNDED"
+  fulfillmentStatus String // "UNFULFILLED" | "AWAITING_SHIPMENT" | "SHIPPED" | "DELIVERED"
+  totalAmount       Decimal  @db.Decimal(10, 2)
+  shippingAmount    Decimal  @db.Decimal(10, 2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id              String  @id @default(uuid())
+  orderId         String // 模組內關聯 (Order.id)
+  productId       String // 邏輯外鍵 (指向 Product.id)
+  quantity        Int
+  priceAtPurchase Decimal @db.Decimal(10, 2) // 歷史快照價格
+  Order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+// ==========================================
+// 4. --- Payments Module (金流) ---
+// ==========================================
+model PaymentTransaction {
+  id             String   @id @default(uuid())
+  orderId        String   @unique // 邏輯外鍵 (指向 Order.id)
+  provider       String // "STRIPE" | "PAYPAL" (Agnostic Interface)
+  providerId     String   @unique // Stripe 的 PaymentIntent ID (pi_...)
+  status         String // "succeeded" | "failed" | "requires_capture"
+  amount         Decimal  @db.Decimal(10, 2)
+  idempotencyKey String   @unique // 我們的 API 發送端防護鍵
+  createdAt      DateTime @default(now())
+
+  auditLogs TransactionAuditLog[]
+}
+
+model TransactionAuditLog {
+  id            String             @id @default(uuid())
+  transactionId String // 模組內關聯 (PaymentTransaction.id)
+  rawPayload    Json // 儲存 Stripe 丟過來的完整 JSON 作為審計日誌
+  createdAt     DateTime           @default(now())
+  Transaction   PaymentTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+}
+
+// 🛡️ 第一道防線：Stripe Webhook 冪等防護表 (ADR 0009)
+model ProcessedWebhook {
+  id          String   @id // 填入 Stripe Event ID (evt_...)
+  provider    String // "STRIPE"
+  eventType   String // "checkout.session.completed" 等
+  processedAt DateTime @default(now())
+}
+
+// ==========================================
+// 5. --- Fulfillment Module (物流履約) ---
+// ==========================================
+model Shipment {
+  id             String   @id @default(uuid())
+  orderId        String // 邏輯外鍵 (指向 Order.id，移除 @unique，支援將來 1:N 拆單)
+  carrier        String // "FEDEX" | "DHL" | "LOCAL" (Agnostic Interface)
+  status         String // "PENDING" | "LABEL_GENERATED" | "IN_TRANSIT" | "DELIVERED"
+  trackingNumber String?
+  labelUrl       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([orderId])
+}
+
+// 📦 運費計價策略歷史版本表 (ADR 0008)
+model ShippingRateVersion {
+  id         String   @id @default(uuid())
+  version    Int      @default(1)
+  baseRate   Decimal  @db.Decimal(10, 2)
+  weightTier Json // 儲存重量階梯計價規則的快照
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}

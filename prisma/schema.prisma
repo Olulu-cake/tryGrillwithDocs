@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Coupon {
+  id             String    @id @default(uuid())
+  code           String    @unique
+  discountType   String    // PERCENT, FIXED
+  value          Decimal   @db.Decimal(10, 2)
+  minOrderAmount Decimal?  @db.Decimal(10, 2)
+  usageLimit     Int?
+  usedCount      Int       @default(0)
+  expiryDate     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// ==========================================
+// 1. --- Users Module (用戶模組) ---
+// ==========================================
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String?   // Added name field
+  password     String?
+  role         String    @default("customer")
+  isRegistered Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  addresses    Address[]
+}
+
+model Address {
+  id         String   @id @default(uuid())
+  userId     String   
+  type       String   
+  fullName   String
+  phone      String
+  line1      String
+  line2      String?
+  city       String
+  state      String?
+  postalCode String
+  country    String
+  User       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ==========================================
+// 2. --- Inventory Module (產品與庫存模組) ---
+// ==========================================
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique
+  title       String
+  description String?
+  price       Decimal  @db.Decimal(10, 2) // 🛡️ 還原為高精度 Decimal 金流安全欄位
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  inventory   InventoryItem?
+}
+
+model InventoryItem {
+  id             String  @id @default(uuid())
+  productId      String  @unique 
+  availableStock Int     
+  reservedStock  Int     @default(0) 
+  Product        Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model StockReservation {
+  id             String   @id @default(uuid())
+  productId      String   
+  cartId         String   
+  quantity       Int
+  expirationTime DateTime 
+  createdAt      DateTime @default(now())
+
+  @@index([productId])
+  @@index([cartId])
+}
+
+// ==========================================
+// 3. --- Orders Module (訂單模組) ---
+// ==========================================
+model Order {
+  id                String      @id @default(uuid())
+  userId            String?     
+  status            String      @default("PENDING") // PENDING, PAID, SHIPPED, COMPLETED, CANCELLED
+  paymentMethod     String?     @default("CREDIT_CARD")
+  paymentStatus     String      
+  fulfillmentStatus String      
+  totalAmount       Decimal     @db.Decimal(10, 2) // 🛡️ 金流安全欄位
+  shippingAmount    Decimal     @db.Decimal(10, 2) // 🛡️ 金流安全欄位
+  
+  // Buyer Details
+  buyerName         String
+  buyerEmail        String
+  buyerPhone        String?
+  
+  // Receiver Details
+  receiverName      String
+  receiverPhone     String?
+  shippingAddress   String
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  items             OrderItem[]
+
+  @@index([userId])
+  @@index([buyerEmail])
+}
+
+model OrderItem {
+  id              String  @id @default(uuid())
+  orderId         String  
+  productId       String  
+  quantity        Int
+  priceAtPurchase Decimal @db.Decimal(10, 2) 
+  Order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+// ==========================================
+// 4. --- Payments Module (金流模組) ---
+// ==========================================
+model PaymentTransaction {
+  id                String   @id @default(uuid())
+  orderId           String   @unique 
+  provider          String   
+  providerId        String   @unique 
+  status            String   
+  amount            Decimal  @db.Decimal(10, 2) // 🛡️ 金流安全欄位
+  idempotencyKey    String   @unique 
+  createdAt         DateTime @default(now())
+  
+  auditLogs         TransactionAuditLog[]
+}
+
+model TransactionAuditLog {
+  id            String             @id @default(uuid())
+  transactionId String             
+  rawPayload    Json               
+  createdAt     DateTime           
+  Transaction   PaymentTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+}
+
+model ProcessedWebhook {
+  id          String   @id 
+  provider    String   
+  eventType   String   
+  processedAt DateTime @default(now())
+}
+
+// ==========================================
+// 5. --- Fulfillment Module (物流履約模組) ---
+// ==========================================
+model Shipment {
+  id             String    @id @default(uuid())
+  orderId        String    
+  carrier        String    
+  status         String    
+  trackingNumber String?
+  labelUrl       String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([orderId])
+}
+
+model ShippingRateVersion {
+  id          String   @id @default(uuid())
+  version     Int      @default(1)
+  baseRate    Decimal  @db.Decimal(10, 2) // 🛡️ 金流安全欄位
+  weightTier  Json     
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}

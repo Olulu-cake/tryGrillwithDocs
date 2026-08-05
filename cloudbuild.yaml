@@ -1,0 +1,36 @@
+substitutions:
+  _LOCATION: 'asia-east1'
+  _REPOSITORY: 'my-app-repo'
+  _IMAGE_NAME: 'app'
+  _SERVICE_NAME: 'my-app'
+  _TAG_NAME: 'latest'
+
+steps:
+  # Step 0: 建置 Docker 映像檔
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:${_TAG_NAME}',
+      '.'
+    ]
+
+  # Step 1: 推送映像檔至 Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push',
+      '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:${_TAG_NAME}'
+    ]
+
+  # Step 2: 直接部署至 Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: [
+      'run', 'deploy', '${_SERVICE_NAME}',
+      '--image', '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:${_TAG_NAME}',
+      '--region', '${_LOCATION}',
+      '--platform', 'managed',
+      '--allow-unauthenticated'
+    ]
+
+images:
+  - '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:${_TAG_NAME}'
