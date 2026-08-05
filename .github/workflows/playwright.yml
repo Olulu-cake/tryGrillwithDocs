@@ -44,7 +44,7 @@ jobs:
         npx ts-node src/app.ts &
         npx wait-on http://localhost:8080
         npx playwright test
-      working-directory: .
+      working-directory: ./storefront
       env:
         CI: true
         PORT: 8080
