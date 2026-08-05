@@ -11,4 +11,10 @@ export default defineConfig({
     trace: 'on',
     actionTimeout: 10000,
   },
+  webServer: {
+    command: 'npm run start || npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  },
 });

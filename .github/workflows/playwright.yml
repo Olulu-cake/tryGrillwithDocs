@@ -37,7 +37,9 @@ jobs:
       working-directory: ./storefront
 
     - name: Run Playwright tests
-      run: npx playwright test
+      run: |
+        npm run dev:server &
+        npx playwright test
       working-directory: ./storefront
       env:
         CI: true
