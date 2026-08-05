@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    timeout-minutes: 15
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -31,8 +31,21 @@ jobs:
     - name: Generate Prisma Client
       run: npx prisma generate
 
-    - name: Install Playwright Browsers
+    - name: Cache Playwright Browsers
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('storefront/package-lock.json') }}
+
+    - name: Install Playwright Browsers & Deps
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
       run: npx playwright install --with-deps
+      working-directory: ./storefront
+
+    - name: Install Playwright System Deps only
+      if: steps.playwright-cache.outputs.cache-hit == 'true'
+      run: npx playwright install-deps
       working-directory: ./storefront
 
     - name: Build Next.js Storefront
