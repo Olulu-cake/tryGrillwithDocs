@@ -14,8 +14,8 @@ test.describe('Checkout Flow - Final Resilient Suite', () => {
     await page.goto('/products');
     await page.waitForLoadState('networkidle');
 
-    // 3. 顯式等待第一個商品連結出現並點擊（絕不使用無等待的 isVisible 判斷）
-    const productLink = page.locator('a[href*="/products/"]').first();
+    // 3. 顯式等待商品連結（包含 /product/、/products/、data-testid）
+    const productLink = page.locator('a[href*="/product/"], a[href*="/products/"], [data-testid="product-card"] a, [data-testid="product-item"] a').first();
     await productLink.waitFor({ state: 'visible', timeout: 10000 });
     await productLink.click();
     await page.waitForLoadState('networkidle');
