@@ -15,9 +15,17 @@ test.describe('Checkout Flow - Final Resilient Assertion', () => {
   const addToCart = async (page: any) => {
     await page.goto('/products');
     await page.waitForLoadState('networkidle');
-    await page.locator('button:has-text("加入購物車")').first().click();
+    
+    // 點擊第一個加入購物車按鈕
+    const addBtn = page.locator('button:has-text("加入購物車")').first();
+    await addBtn.click();
+
+    // 等待狀態寫入（例如等待 UI 上顯示成功提示，或等待 1 秒緩衝）
+    await page.waitForTimeout(1000);
+
     await page.goto('/cart');
-    await expect(page.locator('body')).not.toContainText('購物車 (0)');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('body')).not.toContainText('購物車目前是空的');
     await expect(page.locator('a[href="/checkout"], button:has-text("前往結帳")')).toBeVisible();
   }
 

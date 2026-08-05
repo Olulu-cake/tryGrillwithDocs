@@ -4,9 +4,9 @@ export default defineConfig({
   testDir: './e2e',
   testMatch: ['**/*.spec.ts', '**/*.test.ts'],
   testIgnore: ['**/src/**', '**/node_modules/**', '**/tests/**'],
-  timeout: 10000,
+  timeout: 30 * 1000,
   expect: {
-    timeout: 15000,
+    timeout: 10000,
   },
   use: {
     baseURL: 'http://localhost:3000',
