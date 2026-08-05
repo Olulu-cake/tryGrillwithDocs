@@ -10,27 +10,27 @@ test.describe('Checkout Flow - Final Resilient Suite', () => {
     await page.locator('button[type="submit"]').click();
     await page.waitForLoadState('networkidle');
 
-    // 2. 瀏覽商品列表，並點擊第一個商品進入詳細頁
+    // 2. 瀏覽商品列表
     await page.goto('/products');
     await page.waitForLoadState('networkidle');
 
-    const firstProductLink = page.locator('a[href*="/products/"]').first();
-    if (await firstProductLink.isVisible().catch(() => false)) {
-      await firstProductLink.click();
-      await page.waitForLoadState('networkidle');
-    }
+    // 3. 顯式等待第一個商品連結出現並點擊（絕不使用無等待的 isVisible 判斷）
+    const productLink = page.locator('a[href*="/products/"]').first();
+    await productLink.waitFor({ state: 'visible', timeout: 10000 });
+    await productLink.click();
+    await page.waitForLoadState('networkidle');
 
-    // 3. 在詳細頁點擊『加入購物車』
+    // 4. 在商品詳細頁點擊『加入購物車』
     const addBtn = page.locator('button:has-text("加入購物車"), [data-testid="add-to-cart-btn"]').first();
     await addBtn.waitFor({ state: 'visible', timeout: 10000 });
     await addBtn.click();
     await page.waitForTimeout(1000);
 
-    // 4. 前往購物車驗證
+    // 5. 前往購物車
     await page.goto('/cart');
     await page.waitForLoadState('networkidle');
 
-    // 5. 驗證頁面非空，且包含結帳按鈕或購物車品項
+    // 6. 驗證結帳按鈕可見
     const checkoutBtn = page.locator('a[href*="/checkout"], button:has-text("前往結帳"), button:has-text("結帳")').first();
     await expect(checkoutBtn).toBeVisible({ timeout: 10000 });
   });
