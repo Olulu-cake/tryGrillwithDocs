@@ -21,35 +21,37 @@ test.describe('Checkout Flow - Real Network Interception', () => {
       }, token);
     }
 
-    // 1. 前往商品頁並嘗試點擊
+    // 1. 前往商品頁面
     await page.goto('/products');
     await page.waitForLoadState('networkidle');
 
-    const addBtn = page.locator('[data-testid="add-to-cart-btn"], button:has-text("加入購物車")').first();
-    if (await addBtn.isVisible().catch(() => false)) {
-      await addBtn.click();
-      await page.waitForTimeout(1000);
+    // 2. 嘗試點擊第一個商品項目進入詳細頁，或者直接點擊清單上的商品連結
+    const productItem = page.locator('[data-testid="product-item"]').first();
+    const addToCartBtn = productItem.getByTestId('add-to-cart-btn');
+    
+    // 如果列表頁有按鈕，直接點擊
+    if (await addToCartBtn.isVisible()) {
+      await addToCartBtn.click();
+    } else {
+      // 否則點擊連結進入詳情頁
+      await page.locator('a[href*="/products/"]').first().click();
+      await page.waitForLoadState('networkidle');
+      await page.locator('button:has-text("加入購物車"), [data-testid="add-to-cart-btn"]').first().click();
     }
 
-    // 2. 前往購物車頁面
+    // 4. 等待 1.5 秒讓 API / State 寫入完成
+    await page.waitForTimeout(1500);
+
+    // 5. 前往購物車
     await page.goto('/cart');
     await page.waitForLoadState('networkidle');
 
-    // 3. 檢查購物車是否為空，若為空則主動注入 LocalStorage State 防護
-    const isCartEmpty = await page.locator('body').innerText().then((text: string) => text.includes('購物車目前是空的'));
-    if (isCartEmpty) {
-      await page.evaluate(() => {
-        const item = { id: 'prod-1', name: '測試商品', price: 100, quantity: 1 };
-        localStorage.setItem('cart', JSON.stringify([item]));
-        localStorage.setItem('cart-storage', JSON.stringify({ state: { items: [item] } }));
-      });
-      await page.reload();
-      await page.waitForLoadState('networkidle');
+    // 6. 驗證購物車內有商品或結帳按鈕
+    const hasCheckout = await page.locator('a[href*="/checkout"], button:has-text("前往結帳"), button:has-text("結帳")').count();
+    if (hasCheckout === 0) {
+      // 若無結帳按鈕，確保 Badge 圖示或品項不是 0
+      await expect(page.locator('body')).not.toContainText('購物車 (0)');
     }
-
-    // 4. 容錯斷言：只要畫面不包含『購物車目前是空的』，或是出現任何結帳/商品元素即代表 pass
-    const bodyText = await page.locator('body').innerText();
-    expect(bodyText).not.toContain('購物車目前是空的');
   };
 
   test('Unauthenticated to Authenticated cart state merge', async ({ page }) => {
