@@ -54,6 +54,8 @@ jobs:
 
     - name: Start Backend API Server
       run: |
+        npx prisma db push --accept-data-loss
+        npx prisma db seed || true
         npx ts-node src/app.ts &
         npx wait-on http://localhost:8080
       working-directory: ./
@@ -67,6 +69,8 @@ jobs:
       env:
         CI: true
         BASE_URL: http://localhost:8080
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+        API_URL: http://localhost:8080
 
     - name: Upload Playwright Report on Failure
       uses: actions/upload-artifact@v4

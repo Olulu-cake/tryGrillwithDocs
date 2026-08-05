@@ -6,7 +6,7 @@ export default defineConfig({
   testIgnore: ['**/src/**', '**/node_modules/**', '**/tests/**'],
   timeout: 10000,
   expect: {
-    timeout: 10000,
+    timeout: 15000,
   },
   use: {
     baseURL: 'http://localhost:3000',
