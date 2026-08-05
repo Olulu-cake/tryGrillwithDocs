@@ -12,17 +12,27 @@ test.describe('Checkout Flow - Final Resilient Assertion', () => {
     testBuyerEmail: `e2e_buyer_${Date.now()}@example.com`
   });
 
-  const addToCart = async (page: any) => {
+  const addToCart = async (page: any, token?: string) => {
+    // 若有 token，在頁面載入前寫入 LocalStorage
+    if (token) {
+      await page.goto('/');
+      await page.evaluate((authToken: string) => {
+        localStorage.setItem('token', authToken);
+        // 同步寫入可能的 auth-storage
+        localStorage.setItem('auth-storage', JSON.stringify({ state: { token: authToken, isAuthenticated: true } }));
+      }, token);
+    }
+
     await page.goto('/products');
     await page.waitForLoadState('networkidle');
 
-    // 尋找第一個可點擊的加入購物車按鈕，對齊 user-journey.spec.ts 的成功邏輯
+    // 尋找第一個可點擊的加入購物車按鈕
     const cartBtn = page.locator('[data-testid="add-to-cart-btn"], button:has-text("加入購物車"), button:has-text("Add to Cart")').first();
     await cartBtn.waitFor({ state: 'visible', timeout: 10000 });
     await cartBtn.click();
 
-    // 等待狀態變更 (確保購物車更新處理)
-    await page.waitForTimeout(1000);
+    // 確保 LocalStorage / API 同步完成
+    await page.waitForTimeout(1500);
 
     // 前往購物車頁面
     await page.goto('/cart');
@@ -37,16 +47,19 @@ test.describe('Checkout Flow - Final Resilient Assertion', () => {
     const data = getTestData();
     const password = 'Password123!';
 
-    await page.request.post('http://localhost:8080/api/auth/register', {
+    const regRes = await page.request.post('http://localhost:8080/api/auth/register', {
       data: { email: data.testEmail, password, name: data.testBuyerName }
     });
+    expect(regRes.ok()).toBeTruthy();
     
-    await page.goto('/login');
-    await page.getByPlaceholder('Email').fill(data.testEmail);
-    await page.getByPlaceholder('Password').fill(password);
-    await page.click('button:has-text("登入")'); 
+    // 直接呼叫 API 取得 token 以便寫入 Storage
+    const loginRes = await page.request.post('http://localhost:8080/api/auth/login', {
+      data: { email: data.testEmail, password }
+    });
+    expect(loginRes.ok()).toBeTruthy();
+    const { token } = await loginRes.json();
 
-    await addToCart(page);
+    await addToCart(page, token);
 
     await page.goto('/checkout');
     await page.waitForLoadState('networkidle');
@@ -54,7 +67,7 @@ test.describe('Checkout Flow - Final Resilient Assertion', () => {
     // 填寫訂購人
     await page.getByPlaceholder('姓名').first().fill(data.testBuyerName);
     await page.getByPlaceholder('電話').first().fill(data.testBuyerPhone);
-    // 填寫收件人 (強制填寫，不使用checkbox)
+    // 填寫收件人
     await page.getByPlaceholder('姓名').nth(1).fill(data.testBuyerName);
     await page.getByPlaceholder('電話').nth(1).fill(data.testBuyerPhone);
     await page.getByPlaceholder('配送地址').fill(data.testAddress);
@@ -111,16 +124,13 @@ test.describe('Checkout Flow - Final Resilient Assertion', () => {
     await guestPage.waitForLoadState('networkidle');
     
     await guestPage.locator('label:has-text("訂單編號") + input').fill(realOrderId);
-    console.log('Using Order ID for Tracking:', realOrderId);
     await guestPage.locator('label:has-text("Email") + input').fill(data.testBuyerEmail);
-    console.log('Using Buyer Email for Tracking:', data.testBuyerEmail);
     
     // 重構點擊『查詢』後的同步等待機制
     const [trackRes] = await Promise.all([
       guestPage.waitForResponse(res => res.url().includes('/api/trpc') || res.url().includes('/api/orders')),
       guestPage.click('button:has-text("查詢")')
     ]);
-    console.log('Track API Response Status:', trackRes.status(), await trackRes.json());
     
     await expect(guestPage.locator('body')).toContainText(data.testBuyerName);
     await expect(guestPage.locator('body')).toContainText(data.testReceiverName);
