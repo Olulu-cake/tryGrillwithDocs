@@ -43,6 +43,10 @@ jobs:
     - name: Build Next.js Storefront
       run: npm run build
       working-directory: ./storefront
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret-key-for-testing' }}
+        NEXT_PUBLIC_API_URL: http://127.0.0.1:3000
 
     - name: Generate Prisma Client & Push DB
       run: |
@@ -74,7 +78,9 @@ jobs:
         CI: true
         BASE_URL: http://localhost:3000
         API_URL: http://localhost:8080
-        NEXT_PUBLIC_API_URL: http://localhost:8080
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret-key-for-testing' }}
+        NEXT_PUBLIC_API_URL: http://127.0.0.1:3000
 
     - name: Upload Playwright Report on Failure
       uses: actions/upload-artifact@v5
