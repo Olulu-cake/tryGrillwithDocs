@@ -81,8 +81,8 @@ jobs:
       working-directory: ./storefront
       env:
         CI: true
-        BASE_URL: http://localhost:3000
-        API_URL: http://localhost:8080
+        BASE_URL: http://127.0.0.1:3000
+        API_URL: http://127.0.0.1:8080
         DATABASE_URL: "postgresql://postgres:password@localhost:5432/testdb?schema=public"
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret-key-for-testing' }}
         NEXT_PUBLIC_API_URL: http://127.0.0.1:8080
