@@ -46,25 +46,25 @@ jobs:
 
     - name: Create .env Files for CI Parity
       run: |
-        echo "DATABASE_URL=${{ env.DATABASE_URL }}" > .env
-        echo "JWT_SECRET=${{ env.JWT_SECRET }}" >> .env
-        echo "SESSION_SECRET=${{ env.SESSION_SECRET }}" >> .env
-        echo "CORS_ORIGIN=${{ env.CORS_ORIGIN }}" >> .env
-        echo "NODE_OPTIONS=${{ env.NODE_OPTIONS }}" >> .env
-        echo "PORT=${{ env.PORT }}" >> .env
-        echo "FRONTEND_URL=${{ env.FRONTEND_URL }}" >> .env
-        echo "NODE_ENV=${{ env.NODE_ENV }}" >> .env
-        echo "NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}" >> .env
+        echo "DATABASE_URL=${{ env.DATABASE_URL }}" > $GITHUB_WORKSPACE/.env
+        echo "JWT_SECRET=${{ env.JWT_SECRET }}" >> $GITHUB_WORKSPACE/.env
+        echo "SESSION_SECRET=${{ env.SESSION_SECRET }}" >> $GITHUB_WORKSPACE/.env
+        echo "CORS_ORIGIN=${{ env.CORS_ORIGIN }}" >> $GITHUB_WORKSPACE/.env
+        echo "NODE_OPTIONS=${{ env.NODE_OPTIONS }}" >> $GITHUB_WORKSPACE/.env
+        echo "PORT=${{ env.PORT }}" >> $GITHUB_WORKSPACE/.env
+        echo "FRONTEND_URL=${{ env.FRONTEND_URL }}" >> $GITHUB_WORKSPACE/.env
+        echo "NODE_ENV=${{ env.NODE_ENV }}" >> $GITHUB_WORKSPACE/.env
+        echo "NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}" >> $GITHUB_WORKSPACE/.env
         
         # Sync environment files
-        cp .env .env.local
-        cp .env storefront/.env
-        cp .env storefront/.env.local
-        cp .env storefront/.env.production
+        cp $GITHUB_WORKSPACE/.env $GITHUB_WORKSPACE/.env.local
+        cp $GITHUB_WORKSPACE/.env $GITHUB_WORKSPACE/storefront/.env
+        cp $GITHUB_WORKSPACE/.env $GITHUB_WORKSPACE/storefront/.env.local
+        cp $GITHUB_WORKSPACE/.env $GITHUB_WORKSPACE/storefront/.env.production
         
         # Ensure specific Next.js public variables exist in storefront/.env.local
-        echo "NEXTAUTH_URL=http://localhost:3000" >> storefront/.env.local
-        echo "NEXTAUTH_SECRET=${{ env.NEXTAUTH_SECRET }}" >> storefront/.env.local
+        echo "NEXTAUTH_URL=http://localhost:3000" >> $GITHUB_WORKSPACE/storefront/.env.local
+        echo "NEXTAUTH_SECRET=${{ env.NEXTAUTH_SECRET }}" >> $GITHUB_WORKSPACE/storefront/.env.local
 
     - name: Install Dependencies
       run: npm ci
@@ -73,10 +73,14 @@ jobs:
       run: npm ci
       working-directory: ./storefront
 
-    - name: Generate Prisma Client & Push DB
+    - name: Generate Prisma Clients
       run: |
         npx prisma generate
-        npx prisma db push --force-reset
+        npx prisma generate
+      working-directory: ./storefront
+
+    - name: Push DB Schema
+      run: npx prisma db push --force-reset
       working-directory: ./
 
     - name: Seed Database
@@ -95,10 +99,10 @@ jobs:
 
     - name: Start Backend API & Run Playwright Tests
       run: |
-        nohup npx ts-node src/app.ts > api.log 2>&1 &
+        nohup npx ts-node src/app.ts > $GITHUB_WORKSPACE/api.log 2>&1 &
         npx wait-on tcp:8080
-        cd storefront
         npx playwright test --workers=1
+      working-directory: ./storefront
       env:
         PORT: 8080
         CI: true
@@ -106,7 +110,7 @@ jobs:
 
     - name: Print Backend API Log
       if: always()
-      run: cat api.log
+      run: cat $GITHUB_WORKSPACE/api.log
 
     - name: Upload Playwright Report on Failure
       uses: actions/upload-artifact@v5
