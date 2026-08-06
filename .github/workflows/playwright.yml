@@ -24,8 +24,12 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
+      NODE_OPTIONS: "--dns-result-order=ipv4first"
       DATABASE_URL: "postgresql://postgres:password@localhost:5432/testdb?schema=public"
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret-key-for-testing' }}
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:8080
+      API_URL: http://127.0.0.1:8080
+      BASE_URL: http://127.0.0.1:3000
     steps:
     - uses: actions/checkout@v4.2.2
 
@@ -51,38 +55,27 @@ jobs:
       run: npx ts-node prisma/seed.ts
       working-directory: ./
 
-    - name: Build Next.js Storefront
-      run: npm run build
-      working-directory: ./storefront
-      env:
-        DATABASE_URL: "postgresql://postgres:password@localhost:5432/testdb?schema=public"
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret-key-for-testing' }}
-        NEXT_PUBLIC_API_URL: http://127.0.0.1:8080
-
-    - name: Install Playwright Browsers & Deps
-      run: npx playwright install --with-deps
-      working-directory: ./storefront
-
-    - name: Start Services (API)
+    - name: Start Backend API Service
       run: |
         npx ts-node src/app.ts &
         sleep 10
       working-directory: ./
       env:
         PORT: 8080
-        NEXT_PUBLIC_API_URL: http://127.0.0.1:8080
-        DATABASE_URL: "postgresql://postgres:password@localhost:5432/testdb?schema=public"
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret-key-for-testing' }}
 
+    - name: Build Next.js Storefront
+      run: npm run build
+      working-directory: ./storefront
+
+    - name: Install Playwright Browsers & Deps
+      run: npx playwright install --with-deps
+      working-directory: ./storefront
 
     - name: Run Playwright tests
       run: npx playwright test --workers=1
       working-directory: ./storefront
       env:
         CI: true
-        DATABASE_URL: "postgresql://postgres:password@localhost:5432/testdb?schema=public"
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret-key-for-testing' }}
-        NEXT_PUBLIC_API_URL: http://127.0.0.1:8080
 
     - name: Upload Playwright Report on Failure
       uses: actions/upload-artifact@v5
