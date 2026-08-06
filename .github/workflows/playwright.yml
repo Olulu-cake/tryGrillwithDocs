@@ -71,7 +71,7 @@ jobs:
     - name: Generate Prisma Client & Push DB
       run: |
         npx prisma generate
-        npx prisma db push --accept-data-loss
+        npx prisma db push --force-reset
       working-directory: ./
 
     - name: Seed Database
