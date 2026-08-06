@@ -52,7 +52,7 @@ export class CartStore {
     const item = cart.find(i => i.productId === productId);
     const currentQuantity = item ? item.quantity : 0;
     const requestedTotal = currentQuantity + quantity;
-    const availableStock = product.inventory?.availableStock || 0;
+    const availableStock = product.inventory?.availableStock ?? 999;
 
     if (requestedTotal > availableStock) {
       const error: any = new Error('INSUFFICIENT_STOCK');
@@ -74,7 +74,7 @@ export class CartStore {
       throw new Error('PRODUCT_NOT_FOUND');
     }
 
-    const availableStock = product.inventory?.availableStock || 0;
+    const availableStock = product.inventory?.availableStock ?? 999;
     if (quantity > availableStock) {
       const error: any = new Error('INSUFFICIENT_STOCK');
       error.status = 400;

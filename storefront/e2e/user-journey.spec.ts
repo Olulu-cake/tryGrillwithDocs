@@ -16,7 +16,7 @@ test.describe('User Journey', () => {
 
   test.beforeEach(async ({ request }) => {
     // 每次測試前確保購物車為空
-    await request.delete('/api/cart');
+    await request.delete('/cart');
   });
 
   test('New member full shopping and strict data consistency journey', async ({ page }) => {

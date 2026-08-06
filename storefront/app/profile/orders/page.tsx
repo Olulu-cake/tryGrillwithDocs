@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getStatusLabel } from '@/lib/utils';
 import { Order } from '@/types/order';
-import { apiFetch } from '../../../lib/api';
+import { apiFetchRaw } from '@/lib/api';
 
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -23,7 +23,7 @@ export default function OrderHistoryPage() {
     
     setIsLoggedIn(true);
 
-    apiFetch('/api/orders/user')
+    apiFetchRaw('/orders/user')
       .then(async (res) => {
         if (!res.ok) {
           throw new Error('Failed to fetch orders');

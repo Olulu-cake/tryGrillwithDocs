@@ -15,13 +15,8 @@ export default function Navbar() {
 
   const fetchCartCount = useCallback(async () => {
     try {
-      const response = await apiFetch('/api/cart', { cache: 'no-store' });
-      if (response.ok) {
-        const data = await response.json();
-        setCartCount(data.cart?.totalQuantity || 0);
-      } else {
-        setCartCount(0);
-      }
+      const data = await apiFetch<any>('/api/cart', { cache: 'no-store' });
+      setCartCount(data.cart?.totalQuantity || 0);
     } catch (e) {
       console.error('Failed to fetch cart count', e);
       setCartCount(0);
@@ -103,7 +98,7 @@ export default function Navbar() {
         onKeyDown={handleSearch}
       />
       <div className="flex gap-4 items-center">
-        <Link href="/cart">🛒 購物車 {cartCount > 0 && (<span data-testid="cart-badge">{cartCount}</span>)}</Link>
+        <Link href="/cart">🛒 購物車 {cartCount > 0 && <span data-testid="cart-badge">{cartCount}</span>}</Link>
         <Link href="/products">商品</Link>
         <Link href="/order-tracking">訂單追蹤</Link>
         {user ? (

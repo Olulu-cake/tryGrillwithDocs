@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { orderService } from './order.service';
+import { getCartId } from '../../shared/utils';
 
 export const createOrder = async (req: Request, res: Response) => {
   console.log('🔥🔥🔥 【已進入 createOrder 函式】收到 POST /api/orders 請求，Body 內容:', JSON.stringify(req.body));
@@ -23,6 +24,7 @@ export const createOrder = async (req: Request, res: Response) => {
     } : buyer,
     receiver,
     userId: sessionUser?.id,
+    cartId: getCartId(req),
   };
   
   try {

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { getProductById } from '../../../services/product.service';
-import { Product } from '../../../types/product';
-import { apiFetch } from '@/lib/api';
+import { getProductById } from '@/services/product.service';
+import { Product } from '@/types/product';
+import { apiFetchRaw } from '@/lib/api';
 
 export default function ProductDetailPage() {
   const router = useRouter();
@@ -35,12 +35,12 @@ export default function ProductDetailPage() {
       const targetId = (product as any).id || (product as any)._id || (product as any).productId || id;
       const payload = {
         productId: targetId,
-        quantity: quantity
+        quantity: Number(quantity) || 1
       };
       
       console.log('[Add To Cart] Sending Payload:', payload);
 
-      const response = await apiFetch('/api/cart/items', {
+      const response = await apiFetchRaw('/cart/items', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -52,6 +52,7 @@ export default function ProductDetailPage() {
         throw new Error(resData.message || 'Failed to add to cart');
       }
 
+      window.dispatchEvent(new Event('cart-updated'));
       setMessage('Successfully added to cart!');
       setTimeout(() => setMessage(null), 3000);
       return true;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchApi } from '../../../lib/api-client';
+import { apiFetch } from '@/lib/api';
 
 // 由於是 tRPC 透過 HTTP 呼叫，直接定義對應的型別
 interface Product {
@@ -24,7 +24,7 @@ export default function AdminProductsPage() {
     setLoading(true);
     try {
       // 模擬 tRPC 呼叫，實際應整合 tRPC client
-      const data = await fetchApi<{ products: Product[] }>(`/trpc/adminProducts.getAdminProducts?batch=1&input=${encodeURIComponent(JSON.stringify({ status: statusFilter === 'ALL' ? undefined : statusFilter }))}`);
+      const data = await apiFetch<{ products: Product[] }>(`/trpc/adminProducts.getAdminProducts?batch=1&input=${encodeURIComponent(JSON.stringify({ status: statusFilter === 'ALL' ? undefined : statusFilter }))}`);
       setProducts(data.products);
     } catch (error) {
       console.error('Failed to fetch products', error);

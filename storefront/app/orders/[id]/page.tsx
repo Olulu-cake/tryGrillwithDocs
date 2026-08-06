@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { apiFetch } from '../../../lib/api';
+import { apiFetchRaw } from '@/lib/api';
 
 interface OrderItem {
   productId: string;
@@ -39,7 +39,7 @@ export default function OrderDetailPage() {
     async function fetchOrder() {
       if (!id) return;
       try {
-        const response = await apiFetch(`/api/orders/${id}`);
+        const response = await apiFetchRaw(`/orders/${id}`);
         if (!response.ok) {
           throw new Error('無法取得訂單資料');
         }

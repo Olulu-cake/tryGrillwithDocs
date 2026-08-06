@@ -1,6 +1,7 @@
 import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 import { orderService } from '../../modules/orders/order.service';
+import { getCartId } from '../../shared/utils';
 
 export const checkoutRouter = router({
   createOrder: publicProcedure
@@ -25,9 +26,14 @@ export const checkoutRouter = router({
       })).optional(),
       fallbackTotal: z.number().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       return await orderService.createOrder(
-        { buyer: input.buyer, receiver: input.receiver, userId: input.userId },
+        { 
+          buyer: input.buyer, 
+          receiver: input.receiver, 
+          userId: input.userId,
+          cartId: getCartId(ctx.req) 
+        },
         input.fallbackItems,
         input.fallbackTotal
       );

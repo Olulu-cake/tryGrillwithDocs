@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { apiFetch } from '../../lib/api';
+import { apiFetchRaw } from '@/lib/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,7 +19,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await apiFetch('/api/auth/login', {
+      const response = await apiFetchRaw('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });

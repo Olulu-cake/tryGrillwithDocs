@@ -1,4 +1,4 @@
-import { fetchApi } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api";
 import { Suspense } from "react";
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +11,7 @@ interface Product {
 
 async function getProducts(): Promise<Product[]> {
   try {
-    const resData = await fetchApi<any>('/catalog');
+    const resData = await apiFetch<any>('/catalog');
     // Defensive parsing: priority to resData.products, then check if resData itself is Array
     return Array.isArray(resData?.products) 
       ? resData.products 

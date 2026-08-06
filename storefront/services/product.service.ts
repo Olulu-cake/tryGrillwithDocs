@@ -1,4 +1,4 @@
-import { fetchApi } from '@/lib/api-client';
+import { fetchApi } from '@/lib/api';
 
 export const getProducts = async () => {
   return fetchApi<any[]>('/products');

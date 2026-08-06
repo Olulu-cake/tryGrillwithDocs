@@ -8,13 +8,13 @@ const inventoryService = new InventoryService(prisma);
 const orderService = new OrderService(prisma);
 
 describe('Guest Cart Merging Integration', () => {
+  const userId = 'user-test-' + Date.now();
   beforeEach(async () => {
     // Cleanup DB
     await prisma.stockReservation.deleteMany({});
   });
 
   it('should sum quantities of the same item when merging guest and user carts', async () => {
-    const userId = 'user-123';
     const productId = 'prod-1';
     
     // 0. Setup: Need product and stock first

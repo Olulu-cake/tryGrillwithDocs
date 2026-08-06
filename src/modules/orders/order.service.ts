@@ -6,9 +6,8 @@ import { prisma } from '../../shared/database';
 export class OrderService {
   private orders: Map<string, Order> = new Map();
 
-  async createOrder(orderData: { buyer: BuyerInfo, receiver: ReceiverInfo, userId?: string }, fallbackItems?: any[], fallbackTotal?: number) {
-    const { buyer, receiver, userId } = orderData;
-    const cartId = 'cart-123';
+  async createOrder(orderData: { buyer: BuyerInfo, receiver: ReceiverInfo, userId?: string, cartId: string }, fallbackItems?: any[], fallbackTotal?: number) {
+    const { buyer, receiver, userId, cartId } = orderData;
     
     let items: any[] = [];
     try {

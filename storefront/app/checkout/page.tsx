@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/src/utils/trpc';
 import { apiFetch } from '@/lib/api';
-import { useCart } from '../context/CartContext';
+import { useCart } from '@/app/context/CartContext';
 
 export default function CheckoutPage() {
   const { clearCart } = useCart();
@@ -30,31 +30,19 @@ export default function CheckoutPage() {
     async function init() {
       setIsLoading(true);
       try {
-        const [cartRes, userRes] = await Promise.all([
-          apiFetch('/api/cart', { cache: 'no-store' }),
-          apiFetch('/api/auth/me').catch(() => null)
+        const [cartData, userData] = await Promise.all([
+          apiFetch<any>('/api/cart', { cache: 'no-store' }),
+          apiFetch<any>('/api/auth/me').catch(() => null)
         ]);
 
-        const cartData = await cartRes.json();
         setCart(cartData.cart || cartData.data || cartData);
 
-        let userResData;
-        try {
-          if (userRes) {
-            userResData = await userRes.json();
-          } else {
-            userResData = null;
-          }
-        } catch(e) {
-          userResData = null;
-        }
-
-        if (userRes && userRes.ok && userResData?.user) {
+        if (userData && userData.user) {
           setIsLoggedIn(true);
           setFormData(prev => ({
             ...prev,
-            buyerName: userResData.user.name || prev.buyerName,
-            buyerEmail: userResData.user.email || prev.buyerEmail,
+            buyerName: userData.user.name || prev.buyerName,
+            buyerEmail: userData.user.email || prev.buyerEmail,
           }));
         } else {
           setIsLoggedIn(false);
@@ -82,7 +70,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-        const res = await apiFetch('/api/checkout', {
+        const resData = await apiFetch<any>('/api/orders', {
             method: 'POST',
             body: JSON.stringify({
                 buyer: {
@@ -100,11 +88,6 @@ export default function CheckoutPage() {
             })
         });
         
-        if (!res.ok) {
-            throw new Error('建立訂單失敗');
-        }
-        
-        const resData = await res.json();
         const orderId = resData.id || resData.orderId || 'ORD-TEST';
         
         // 清空伺服器端與本地端的購物車
@@ -126,10 +109,7 @@ export default function CheckoutPage() {
         router.push(`/checkout/success?orderId=${orderId}`);
     } catch (err: any) {
         console.error('Checkout error:', err);
-        // Fallback to success page even on error if required by specific E2E test scenarios, 
-        // but generally should alert. If E2E insists, fallback here:
-        alert('訂單處理中，即將導向結果頁...');
-        router.push(`/checkout/success?orderId=ORD-TEST`);
+        alert(`訂單建立失敗: ${err.message || '請稍後再試'}`);
     } finally {
         setIsSubmitting(false);
     }

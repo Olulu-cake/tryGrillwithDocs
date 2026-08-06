@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { trpc } from '@/src/utils/trpc';
-import { apiFetch } from '../../lib/api';
+import { apiFetch } from '@/lib/api';
 
 function ProductCard({ product, onAddToCart }: { product: any, onAddToCart: (product: any, quantity: number) => void }) {
   const [quantity, setQuantity] = useState(1);
@@ -26,8 +26,13 @@ function ProductCard({ product, onAddToCart }: { product: any, onAddToCart: (pro
           className="border p-1 w-16"
         />
       </div>
-      <button 
-        onClick={() => onAddToCart(product, quantity)}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('[DEBUG_ADD_TO_CART] Clicked button for product:', product?.id);
+          onAddToCart(product, Number(quantity) || 1);
+        }}
         className="bg-green-500 text-white mt-2 p-2 rounded w-full"
         data-testid="add-to-cart-btn"
       >
@@ -91,21 +96,16 @@ function ProductsContent() {
     router.push(`/products?${query.toString()}`);
   };
 
-  const handleAddToCart = async (product: any, quantity: number) => {
-    console.log('[Product Page] Add to Cart clicked for product:', product, 'quantity:', quantity);
-    const targetId = product.id || product._id || product.productId;
+  const handleAddToCart = async (product: any, qty: number = 1) => {
+    const targetId = product?.id || product?._id || product?.productId || product;
+    console.log('[DEBUG_ADD_TO_CART] Processing targetId:', targetId, 'qty:', qty);
     if (!targetId) return;
 
-    const res = await apiFetch('/api/cart/items', {
+    await apiFetch('/cart/items', {
       method: 'POST',
-      body: JSON.stringify({ productId: targetId, quantity: quantity })
+      body: JSON.stringify({ productId: targetId, quantity: Number(qty) || 1 })
     });
-
-    if (res.ok) {
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('cart-updated'));
-        }
-    }
+    window.dispatchEvent(new Event('cart-updated'));
   };
 
   const safeProducts = Array.isArray(products) ? products : [];

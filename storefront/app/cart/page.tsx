@@ -30,15 +30,11 @@ export default function CartPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiFetch('/api/cart', { cache: 'no-store' });
-      if (response.status === 401) {
-        setCart({ items: [], totalQuantity: 0, totalAmount: 0 });
-        return;
-      }
-      if (!response.ok) throw new Error('Failed to fetch cart');
-      const resData = await response.json();
+      const resData = await apiFetch<any>('/cart', { cache: 'no-store' });
       
-      setCart(resData.cart);
+      // 確保抓到正確層級的 items 陣列或 cart 物件
+      const cartObj = resData.cart || resData.data || resData;
+      setCart(cartObj);
     } catch (error) {
       console.error('Failed to load cart:', error);
       setError('無法載入購物車，請稍後再試。');
@@ -67,39 +63,33 @@ export default function CartPage() {
     }
     
     try {
-      const response = await apiFetch(`/api/cart/items/${productId}`, {
+      await apiFetch(`/cart/items/${productId}`, {
         method: 'PATCH',
         body: JSON.stringify({ quantity: newQuantity }),
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(`更新失敗：${errorData.message}`);
-      } else {
-          await loadCart();
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('cart-updated'));
-          }
+      await loadCart();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('cart-updated'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update quantity:', error);
-      alert('更新失敗，請稍後再試。');
+      alert(`更新失敗：${error.message || '請稍後再試'}`);
     }
   };
 
   const handleRemoveItem = async (productId: string) => {
     try {
-      const response = await apiFetch(`/api/cart/items/${productId}`, {
+      await apiFetch(`/cart/items/${productId}`, {
         method: 'DELETE',
       });
-      if (response.ok) {
-          await loadCart();
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('cart-updated'));
-          }
+      await loadCart();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('cart-updated'));
       }
     } catch (error) {
       console.error('Failed to remove item:', error);
+      alert('刪除失敗，請稍後再試。');
     }
   };
 

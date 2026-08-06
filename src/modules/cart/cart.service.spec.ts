@@ -8,9 +8,11 @@ jest.mock('../catalog/catalog.service', () => ({
   },
 }));
 
+const CART_ID = 'cart-test-1';
+
 describe('CartStore Unit Test', () => {
   beforeEach(() => {
-    cartService.clearCart('cart-123');
+    cartService.clearCart(CART_ID);
     jest.clearAllMocks();
   });
 
@@ -22,8 +24,8 @@ describe('CartStore Unit Test', () => {
       inventory: { availableStock: 10 } 
     });
     
-    await cartService.addItem('cart-123', 'prod-1', 2);
-    const cart = await cartService.getCart('cart-123');
+    await cartService.addItem(CART_ID, 'prod-1', 2);
+    const cart = await cartService.getCart(CART_ID);
     
     expect(cart.items).toHaveLength(1);
     expect(cart.items[0]).toMatchObject({ productId: 'prod-1', quantity: 2 });
@@ -37,10 +39,10 @@ describe('CartStore Unit Test', () => {
       inventory: { availableStock: 10 } 
     });
     
-    await cartService.addItem('cart-123', 'prod-1', 1);
-    await cartService.addItem('cart-123', 'prod-1', 2);
+    await cartService.addItem(CART_ID, 'prod-1', 1);
+    await cartService.addItem(CART_ID, 'prod-1', 2);
     
-    const cart = await cartService.getCart('cart-123');
+    const cart = await cartService.getCart(CART_ID);
     expect(cart.items).toHaveLength(1);
     expect(cart.items[0].quantity).toBe(3);
   });

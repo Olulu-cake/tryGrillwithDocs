@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../../shared/database';
 import { orderService } from './order.service';
+import { getCartId } from '../../shared/utils';
 
 export const ordersRouter = Router();
 
@@ -26,33 +27,13 @@ ordersRouter.get('/track', async (req: Request, res: Response) => {
 ordersRouter.post('/', async (req: Request, res: Response) => {
   console.log('後端收到的建立訂單 Request Body:', JSON.stringify(req.body, null, 2));
   
-  // Mocking user from token for now based on test requirements
-  const userId = 'user-123'; 
+  const userId = (req as any).session?.userId; 
+  const cartId = getCartId(req);
   
   try {
-    const { items, buyer, receiver } = req.body;
+    const { items, buyer, receiver, totalAmount } = req.body;
     
-    const order = await prisma.order.create({
-      data: {
-        userId,
-        status: 'PENDING',
-        paymentStatus: 'UNPAID',
-        fulfillmentStatus: 'PENDING',
-        totalAmount: 100,
-        shippingAmount: 0,
-        buyerName: req.body.buyerName || buyer?.name || 'Guest',
-        buyerEmail: req.body.buyerEmail || buyer?.email || 'guest@example.com',
-        receiverName: req.body.receiverName || receiver?.name || 'Guest',
-        shippingAddress: req.body.shippingAddress || receiver?.address || 'N/A',
-        items: {
-          create: items.map((item: any) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            priceAtPurchase: 50,
-          }))
-        }
-      }
-    });
+    const order = await orderService.createOrder({ buyer, receiver, userId, cartId }, items, totalAmount);
     console.log('【建單成功】', order.id);
     return res.json({ success: true, order });
   } catch (error: any) {
@@ -62,7 +43,7 @@ ordersRouter.post('/', async (req: Request, res: Response) => {
 });
 
 ordersRouter.get('/', async (req: Request, res: Response) => {
-  const userId = 'user-123';
+  const userId = (req as any).session?.userId;
   const orders = await prisma.order.findMany({
     where: { userId }
   });

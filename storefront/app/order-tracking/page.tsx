@@ -2,8 +2,8 @@
 
 export const dynamic = 'force-dynamic';
 import { useState } from 'react';
-import { getStatusLabel } from '../../lib/utils';
-import { trpc } from '../../src/utils/trpc';
+import { getStatusLabel } from '@/lib/utils';
+import { trpc } from '@/src/utils/trpc';
 
 export default function OrderTrackingPage() {
   const [orderId, setOrderId] = useState('');
