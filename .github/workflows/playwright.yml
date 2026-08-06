@@ -35,7 +35,6 @@ jobs:
       BASE_URL: http://localhost:3000
       PORT: 8080
       FRONTEND_URL: http://localhost:3000
-      NODE_ENV: development
     steps:
     - uses: actions/checkout@v4.2.2
 
@@ -53,7 +52,6 @@ jobs:
         echo "NODE_OPTIONS=${{ env.NODE_OPTIONS }}" >> $GITHUB_WORKSPACE/.env
         echo "PORT=${{ env.PORT }}" >> $GITHUB_WORKSPACE/.env
         echo "FRONTEND_URL=${{ env.FRONTEND_URL }}" >> $GITHUB_WORKSPACE/.env
-        echo "NODE_ENV=${{ env.NODE_ENV }}" >> $GITHUB_WORKSPACE/.env
         echo "NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}" >> $GITHUB_WORKSPACE/.env
         
         # Sync environment files
@@ -103,7 +101,10 @@ jobs:
 
     - name: Print Backend API Log
       if: always()
-      run: cat $GITHUB_WORKSPACE/api.log
+      run: |
+        if [ -f $GITHUB_WORKSPACE/api.log ]; then
+          cat $GITHUB_WORKSPACE/api.log
+        fi
 
     - name: Upload Playwright Report on Failure
       uses: actions/upload-artifact@v5
