@@ -81,6 +81,8 @@ jobs:
     - name: Build Next.js Storefront
       run: npm run build
       working-directory: ./storefront
+      env:
+        NEXT_PUBLIC_API_URL: "http://localhost:8080"
 
     - name: Install Playwright Browsers & Deps
       run: npx playwright install --with-deps
@@ -95,6 +97,7 @@ jobs:
       env:
         PORT: 8080
         CI: true
+        NEXT_PUBLIC_API_URL: "http://localhost:8080"
 
     - name: Print Backend API Log
       if: always()
