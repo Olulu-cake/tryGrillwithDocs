@@ -112,10 +112,16 @@ export default function CheckoutPage() {
         
         // 使用上下文的清空函數並加上雙重保險
         clearCart();
+        // 如果 CartContext 有提供 setCartItems，強制同步設定為空
+        // 由於我們在 page 內無法直接存取 Provider 的 setter，需要調整 CartContext 暴露 setter 或直接操作
+        // 基於現有 CartContext 結構，修改為：
         if (typeof window !== 'undefined') {
             localStorage.setItem('cartItems', '[]');
             window.dispatchEvent(new Event('cart-updated'));
         }
+        
+        // 強制重新整理頁面以更新 Navbar
+        router.refresh();
         
         router.push(`/checkout/success?orderId=${orderId}`);
     } catch (err: any) {
