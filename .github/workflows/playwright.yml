@@ -73,18 +73,11 @@ jobs:
       run: npm ci
       working-directory: ./storefront
 
-    - name: Generate Prisma Clients
+    - name: Generate & Push DB Schema & Seed
       run: |
-        npx prisma generate
-        npx prisma generate
-      working-directory: ./storefront
-
-    - name: Push DB Schema
-      run: npx prisma db push --force-reset
-      working-directory: ./
-
-    - name: Seed Database
-      run: npx ts-node prisma/seed.ts
+        npx prisma generate --schema=prisma/schema.prisma
+        npx prisma db push --force-reset --schema=prisma/schema.prisma
+        npx ts-node prisma/seed.ts
       working-directory: ./
 
     - name: Build Next.js Storefront
