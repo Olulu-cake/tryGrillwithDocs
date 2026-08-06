@@ -91,7 +91,7 @@ jobs:
     - name: Start Backend API & Run Playwright Tests
       run: |
         nohup npx ts-node src/app.ts > $GITHUB_WORKSPACE/api.log 2>&1 &
-        npx wait-on tcp:8080
+        npx wait-on tcp:8080 --timeout 15000 || (echo "=== API STARTUP FAILED ===" && cat $GITHUB_WORKSPACE/api.log && exit 1)
         npx playwright test --workers=1
       working-directory: ./storefront
       env:
