@@ -51,7 +51,13 @@ jobs:
         echo "PORT=8080" >> .env
         echo "NEXT_PUBLIC_API_URL=http://localhost:8080" >> .env
         
-        echo "NEXT_PUBLIC_API_URL=http://localhost:8080" > storefront/.env.local
+        # Sync environment files
+        cp .env .env.local
+        cp .env storefront/.env
+        cp .env storefront/.env.local
+        cp .env storefront/.env.production
+        
+        # Ensure specific Next.js public variables exist in storefront/.env.local
         echo "NEXTAUTH_URL=http://localhost:3000" >> storefront/.env.local
         echo "NEXTAUTH_SECRET=${{ env.NEXTAUTH_SECRET }}" >> storefront/.env.local
 
