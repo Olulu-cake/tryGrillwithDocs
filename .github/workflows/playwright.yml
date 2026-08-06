@@ -26,13 +26,16 @@ jobs:
     env:
       DATABASE_URL: "postgresql://postgres:password@localhost:5432/testdb?schema=public"
       JWT_SECRET: "super-secret-ci-key"
-      SESSION_SECRET: "super-secret-session-key"
+      SESSION_SECRET: "ecommerce_dev_secret_key_2026"
       CORS_ORIGIN: "http://localhost:3000"
       NODE_OPTIONS: "--dns-result-order=ipv4first"
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret-key-for-testing' }}
       NEXT_PUBLIC_API_URL: http://localhost:8080
       API_URL: http://localhost:8080
       BASE_URL: http://localhost:3000
+      PORT: 8080
+      FRONTEND_URL: http://localhost:3000
+      NODE_ENV: development
     steps:
     - uses: actions/checkout@v4.2.2
 
@@ -48,8 +51,10 @@ jobs:
         echo "SESSION_SECRET=${{ env.SESSION_SECRET }}" >> .env
         echo "CORS_ORIGIN=${{ env.CORS_ORIGIN }}" >> .env
         echo "NODE_OPTIONS=${{ env.NODE_OPTIONS }}" >> .env
-        echo "PORT=8080" >> .env
-        echo "NEXT_PUBLIC_API_URL=http://localhost:8080" >> .env
+        echo "PORT=${{ env.PORT }}" >> .env
+        echo "FRONTEND_URL=${{ env.FRONTEND_URL }}" >> .env
+        echo "NODE_ENV=${{ env.NODE_ENV }}" >> .env
+        echo "NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}" >> .env
         
         # Sync environment files
         cp .env .env.local
