@@ -25,6 +25,7 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: "postgresql://postgres:password@localhost:5432/testdb?schema=public"
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret-key-for-testing' }}
     steps:
     - uses: actions/checkout@v4.2.2
 
@@ -66,10 +67,14 @@ jobs:
       run: |
         npx ts-node src/app.ts &
         npm run start -- --port 3000 &
+        sleep 5
       working-directory: ./
       env:
         PORT: 8080
         NEXT_PUBLIC_API_URL: http://127.0.0.1:8080
+        DATABASE_URL: "postgresql://postgres:password@localhost:5432/testdb?schema=public"
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret-key-for-testing' }}
+
 
     - name: Run Playwright tests
       run: npx playwright test --workers=1
