@@ -50,6 +50,10 @@ jobs:
         npx prisma db push --accept-data-loss
       working-directory: ./
 
+    - name: Seed Database
+      run: npx ts-node prisma/seed.ts
+      working-directory: ./
+
     - name: Install Playwright Browsers & Deps
       run: npx playwright install --with-deps
       working-directory: ./storefront
