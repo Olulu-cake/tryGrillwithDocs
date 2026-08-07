@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,7 +88,10 @@ export default function CheckoutPage() {
             })
         });
         
-        const orderId = resData.id || resData.orderId || 'ORD-TEST';
+        const orderId = resData.order?.id || resData.id || resData.orderId;
+          if (!orderId) {
+            throw new Error('建立訂單成功，但未取得有效的訂單編號');
+          }
         
         // 清空伺服器端與本地端的購物車
         await apiFetch('/api/cart', { method: 'DELETE' });
@@ -168,3 +171,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
